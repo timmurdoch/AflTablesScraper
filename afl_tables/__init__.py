@@ -1,6 +1,7 @@
 from urllib.parse import urljoin
 import requests
 import bs4
+import re
 import datetime
 import itertools
 import typing
@@ -124,11 +125,34 @@ class Match:
         """
         Parse the date/venue/attendees section
         """
-        date = misc.contents[0]
-        date_elements = str(date).replace('(', '').replace(')', '').split()
-        date_str = ' '.join(date_elements[0:2] + date_elements[-2:])
-        parsed_date = datetime.datetime.strptime(date_str, '%a %d-%b-%Y %I:%M %p').replace(tzinfo=AEST)
+        #date = misc.contents[0]
+        #date_elements = str(date).replace('(', '').replace(')', '').split()
+        #date_str = ' '.join(date_elements[0:2] + date_elements[-2:])
+        #parsed_date = datetime.datetime.strptime(date_str, '%a %d-%b-%Y %I:%M %p').replace(tzinfo=AEST)
 
+            # Replacement logic:
+date = misc.contents[0]
+date_str = str(date).strip()
+
+# Try to extract both date and time
+match = re.search(r'(?P<date>\w{3} \d{2}-\w{3}-\d{4})(?:[^\d]*(?P<time>\d{1,2}:\d{2} [AP]M))?', date_str)
+
+if match:
+    date_part = match.group('date')
+    time_part = match.group('time')
+
+    try:
+        if time_part:
+            parsed_date = datetime.datetime.strptime(f"{date_part} {time_part}", '%a %d-%b-%Y %I:%M %p').replace(tzinfo=AEST)
+        else:
+            parsed_date = datetime.datetime.strptime(date_part, '%a %d-%b-%Y').replace(tzinfo=AEST)
+    except Exception as e:
+        print(f"Date parse error: {e} | Raw: {date_str}")
+        parsed_date = None
+else:
+    print(f"Could not parse date: {date_str}")
+    parsed_date = None
+        
         ret = {
             'date': parsed_date
         }
