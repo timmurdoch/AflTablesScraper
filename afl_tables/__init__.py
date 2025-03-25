@@ -130,12 +130,28 @@ class Match:
         #date_str = ' '.join(date_elements[0:2] + date_elements[-2:])
         #parsed_date = datetime.datetime.strptime(date_str, '%a %d-%b-%Y %I:%M %p').replace(tzinfo=AEST)
 
-            # Replacement logic:
-date = misc.contents[0]
-date_str = str(date).strip()
+        # DEBUG: Show all contents of misc
+        for i, c in enumerate(misc.contents):
+        print(f"misc.contents[{i}]: {repr(c)}")
 
-# Try to extract both date and time
-match = re.search(r'(?P<date>\w{3} \d{2}-\w{3}-\d{4})(?:[^\d]*(?P<time>\d{1,2}:\d{2} [AP]M))?', date_str)
+        # Attempt to extract date and time separately
+        try:
+            date_text = misc.contents[0].strip() if len(misc.contents) > 0 else None
+            time_text = misc.contents[2].strip() if len(misc.contents) > 2 else None
+
+            print(f"DEBUG: date_text = {date_text}")
+            print(f"DEBUG: time_text = {time_text}")
+
+            if date_text and time_text:
+                parsed_date = datetime.datetime.strptime(f"{date_text} {time_text}", '%a %d-%b-%Y %I:%M %p').replace(tzinfo=AEST)
+            elif date_text:
+                parsed_date = datetime.datetime.strptime(date_text, '%a %d-%b-%Y').replace(tzinfo=AEST)
+            else:
+                parsed_date = None
+
+        except Exception as e:
+            print(f"Date parse error: {e} | Raw contents: {[str(c) for c in misc.contents]}")
+            parsed_date = None
 
 if match:
     date_part = match.group('date')
